@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.3</title>
+    <title>產線計算機 V5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -24,14 +24,18 @@
         .chip.selected { background-color: #2563eb; border-color: #60a5fa; color: white; }
 
         /* --- 輸入框樣式 --- */
-        .input-box { background-color: #1e293b; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; border: 2px solid #334155; transition: all 0.15s; }
+        .input-group-row { display: flex; gap: 8px; margin-bottom: 8px; } /* 雙欄容器 */
+        
+        .input-box { background-color: #1e293b; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; border: 2px solid #334155; transition: all 0.15s; position: relative; }
+        .input-box-half { flex: 1; margin-bottom: 0; } /* 雙欄專用 */
+        
         .input-box.active { border-color: #3b82f6; background-color: #172554; }
         
         .label { font-size: 0.75rem; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
         .active .label { color: #60a5fa; }
         
-        .val-display { font-size: 1.6rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; }
-        .placeholder { color: #475569; font-weight: 400; font-size: 1.2rem; }
+        .val-display { font-size: 1.5rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; overflow: hidden; }
+        .placeholder { color: #475569; font-weight: 400; font-size: 1.1rem; }
 
         /* --- 計算結果區 (雙欄) --- */
         .calc-row { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -64,7 +68,7 @@
 
     <div class="content-area">
         <div class="flex justify-between items-center px-1 mb-1">
-            <span class="text-xs text-gray-400">🔢 點選規格或點擊輸入</span>
+            <span class="text-xs text-gray-400">🔢 點選或手動輸入</span>
             <button onclick="resetAll()" class="text-xs bg-gray-700 px-3 py-1 rounded-full text-gray-300">重置</button>
         </div>
 
@@ -77,18 +81,20 @@
         </div>
 
         <div class="input-box" id="box-spec" onclick="focusField('spec')">
-            <div class="label">📦 0. 規格 (可自填/選填)</div>
+            <div class="label">📦 0. 規格 (可自填)</div>
             <div class="val-display" id="val-spec">60</div>
         </div>
 
-        <div class="input-box" id="box-in" onclick="focusField('in')">
-            <div class="label">⚖️ 1. 分裝移入量 (Kg)</div>
-            <div class="val-display placeholder" id="val-in">點擊輸入...</div>
-        </div>
+        <div class="input-group-row">
+            <div class="input-box input-box-half" id="box-in" onclick="focusField('in')">
+                <div class="label">⚖️ 1. 移入(Kg)</div>
+                <div class="val-display placeholder" id="val-in">輸入</div>
+            </div>
 
-        <div class="input-box" id="box-avg" onclick="focusField('avg')">
-            <div class="label">📏 2. 平均裝量 (g/瓶)</div>
-            <div class="val-display placeholder" id="val-avg">點擊輸入...</div>
+            <div class="input-box input-box-half" id="box-avg" onclick="focusField('avg')">
+                <div class="label">📏 2. 平均(g)</div>
+                <div class="val-display placeholder" id="val-avg">輸入</div>
+            </div>
         </div>
 
         <div class="input-box active" id="box-bottles" onclick="focusField('bottles')">
@@ -98,11 +104,11 @@
 
         <div class="calc-row">
             <div class="calc-box highlight">
-                <div class="c-label">分裝總量 (Avg × 數量)</div>
+                <div class="c-label">總量 (Avg×數)</div>
                 <div><span class="c-val" id="res-total">-</span><span class="c-unit">Kg</span></div>
             </div>
             <div class="calc-box">
-                <div class="c-label">理論剩餘 (移入 - 總量)</div>
+                <div class="c-label">剩餘 (移入-總)</div>
                 <div><span class="c-val" id="res-remain">-</span><span class="c-unit">Kg</span></div>
             </div>
         </div>
@@ -155,7 +161,6 @@
             avg: document.getElementById('val-avg'),
             bottles: document.getElementById('val-bottles'),
             
-            // 結果顯示
             resTotal: document.getElementById('res-total'),
             resRemain: document.getElementById('res-remain'),
             resBox: document.getElementById('res-box'),
@@ -166,7 +171,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v53_spec');
+            const saved = localStorage.getItem('v54_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -236,10 +241,10 @@
             const val = data[id];
             if(val === '') {
                 if(id === 'spec') {
-                    el.innerText = '輸入...';
+                    el.innerText = '輸入';
                     el.classList.add('placeholder');
                 } else {
-                    el.innerText = '點擊輸入...';
+                    el.innerText = '輸入';
                     el.classList.add('placeholder');
                 }
             } else {
@@ -250,7 +255,7 @@
 
         // --- 核心計算 ---
         function calc() {
-            localStorage.setItem('v53_spec', data.spec);
+            localStorage.setItem('v54_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;     // 移入量
