@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.7</title>
+    <title>產線計算機 V5.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -12,7 +12,7 @@
         /* --- 顯示區 --- */
         .content-area { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
 
-        /* --- 頂部快速選單 (Chips) --- */
+        /* --- 頂部快速選單 --- */
         .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 4px; flex-shrink: 0; scrollbar-width: none; }
         .chip-scroll::-webkit-scrollbar { display: none; }
         
@@ -78,7 +78,7 @@
             <button class="chip" onclick="quickSetSpec('84')">84瓶</button>
             <button class="chip" onclick="quickSetSpec('100')">100瓶</button>
             <button class="chip" onclick="quickSetSpec('12')">12 (丸)</button>
-            <button class="chip" id="btn-k" onclick="quickSetSpec('30', true)">6 (K裝)</button>
+            <button class="chip" id="btn-k" onclick="quickSetSpec('30')">6 (K裝)</button>
         </div>
 
         <div class="input-row">
@@ -155,7 +155,6 @@
         const order = ['in', 'avg', 'bottles', 'remain']; 
         
         const data = { spec: '60', in: '', avg: '', bottles: '', remain: '' };
-        let isKMode = false; // 標記是否為K裝模式
         
         const els = {
             spec: document.getElementById('val-spec'),
@@ -171,7 +170,7 @@
         };
 
         function init() {
-            const saved = localStorage.getItem('v57_spec');
+            const saved = localStorage.getItem('v58_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -184,23 +183,26 @@
             document.getElementById('box-'+id).classList.add('active');
         }
 
-        // isKBtn 用來判斷是否點擊了 K裝按鈕
-        function quickSetSpec(val, isKBtn = false) {
+        // 修改後的按鈕亮燈邏輯
+        function quickSetSpec(val) {
             data.spec = val;
-            els.spec.innerText = val; // 介面顯示 30
-            isKMode = isKBtn;
+            els.spec.innerText = val; // 介面直接顯示 30
             
-            // 更新按鈕樣式
             document.querySelectorAll('.chip').forEach(btn => {
-                // 如果是 K裝按鈕 (ID btn-k) 且傳入值是 30，則設為選中
-                if(isKBtn && btn.id === 'btn-k') {
+                btn.classList.remove('selected'); // 先全部移除
+                
+                // 邏輯修正：嚴格區分 K裝 (30) 與 一般 (60, 70...)
+                // 1. 如果選的是 30 (K裝)，只亮 ID 為 btn-k 的按鈕
+                if (val === '30' && btn.id === 'btn-k') {
                     btn.classList.add('selected');
-                } 
-                // 處理一般按鈕
-                else if (!isKBtn && btn.innerText.includes(val) && btn.id !== 'btn-k') {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
+                }
+                // 2. 如果選的不是 30，且按鈕不是 K裝按鈕，再進行數字比對
+                else if (val !== '30' && btn.id !== 'btn-k') {
+                    // 取出按鈕上的純數字 (例如 "60瓶" -> "60")
+                    let btnNum = btn.innerText.match(/\d+/); 
+                    if (btnNum && btnNum[0] === val) {
+                        btn.classList.add('selected');
+                    }
                 }
             });
             calc();
@@ -256,27 +258,24 @@
 
         // --- 核心計算 ---
         function calc() {
-            localStorage.setItem('v57_spec', data.spec);
+            localStorage.setItem('v58_spec', data.spec);
 
-            // 規格 (若選K裝，這裡 data.spec 已經是 30)
+            // 這裡 spec 會是 30 (如果是K裝) 或 60, 84...
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;
             const a = parseFloat(data.avg) || 0;
-            const b = parseFloat(data.bottles) || 0; 
-            
-            // 邏輯修改：不進行 *5，輸入多少就是多少
-            const actualBottles = b;
+            const b = parseFloat(data.bottles) || 0;
 
-            // 1. 總量計算
+            // 1. 總量計算 (直接用輸入的數量算，不乘 5)
             let totalKg = 0;
-            if (a > 0 && actualBottles > 0) {
-                totalKg = (a * actualBottles) / 1000;
+            if (a > 0 && b > 0) {
+                totalKg = (a * b) / 1000;
                 els.resTotal.innerText = totalKg.toFixed(2);
             } else {
                 els.resTotal.innerText = "-";
             }
 
-            // 2. 剩餘計算 (手動/自動並存)
+            // 2. 剩餘計算
             if (curr !== 'remain') {
                 if (i > 0 && totalKg > 0) {
                     const autoRemain = (i - totalKg).toFixed(2);
@@ -304,10 +303,10 @@
                 els.cardYield.style.background = "#064e3b";
             }
 
-            // 4. 箱數計算 (以 30 為基準)
-            if (spec > 0 && actualBottles > 0) {
-                const full = Math.floor(actualBottles / spec);
-                const rem = actualBottles % spec;
+            // 4. 箱數計算
+            if (spec > 0 && b > 0) {
+                const full = Math.floor(b / spec);
+                const rem = b % spec;
                 const totalBox = rem > 0 ? full + 1 : full;
                 els.resBox.innerText = totalBox + " 箱";
                 els.resBoxDet.innerText = `(${full}整 + 餘${rem})`;
