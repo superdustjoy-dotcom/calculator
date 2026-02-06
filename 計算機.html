@@ -3,58 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.5</title>
+    <title>產線計算機 V5.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
         body { background-color: #0f172a; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; touch-action: manipulation; display: flex; flex-direction: column; height: 100vh; }
 
-        /* --- 上半部：顯示區 --- */
-        .content-area { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; }
+        /* --- 顯示區 (確保上方不會被擋住) --- */
+        .content-area { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
 
         /* --- 頂部快速選單 (Chips) --- */
-        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px; scrollbar-width: none; }
+        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 4px; flex-shrink: 0; scrollbar-width: none; }
         .chip-scroll::-webkit-scrollbar { display: none; }
         
         .chip {
             white-space: nowrap; background-color: #1e293b; color: #94a3b8; border: 1px solid #334155;
-            padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; flex-shrink: 0;
+            padding: 8px 16px; border-radius: 24px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; flex-shrink: 0;
         }
         .chip:active { transform: scale(0.95); }
-        .chip.selected { background-color: #2563eb; border-color: #60a5fa; color: white; }
+        .chip.selected { background-color: #2563eb; border-color: #60a5fa; color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4); }
 
-        /* --- 輸入框排版系統 (雙欄) --- */
-        .input-row { display: flex; gap: 8px; margin-bottom: 8px; } /* 每一列的容器 */
+        /* --- 雙欄排版 --- */
+        .input-row { display: flex; gap: 8px; }
         
         .input-box { 
-            flex: 1; /* 自動平分寬度 */
-            background-color: #1e293b; 
-            border-radius: 12px; 
-            padding: 8px 10px; 
-            border: 2px solid #334155; 
-            transition: all 0.15s; 
-            position: relative; 
-            min-width: 0; /* 防止文字撐爆 */
+            flex: 1; background-color: #1e293b; border-radius: 12px; padding: 10px; 
+            border: 2px solid #334155; transition: all 0.1s; position: relative; min-width: 0;
         }
-        
         .input-box.active { border-color: #3b82f6; background-color: #172554; }
         
-        .label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 特殊：剩餘量原本是計算結果，現在變成可輸入，給它不同顏色框線區分 */
+        .input-box.editable-result { border-color: #475569; border-style: dashed; }
+        .input-box.editable-result.active { border-color: #3b82f6; border-style: solid; }
+
+        .label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px; white-space: nowrap; }
         .active .label { color: #60a5fa; }
         
-        .val-display { font-size: 1.4rem; font-weight: 700; color: white; min-height: 30px; line-height: 1.2; display: flex; align-items: center; overflow: hidden; }
-        .placeholder { color: #475569; font-weight: 400; font-size: 1rem; }
-
-        /* --- 計算結果區 (雙欄) --- */
-        .calc-row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .calc-box { flex: 1; background: #334155; border-radius: 10px; padding: 8px 12px; border: 1px solid #475569; position: relative; }
-        .calc-box.highlight { background: linear-gradient(135deg, #1e3a8a, #1e40af); border-color: #3b82f6; }
+        .val-display { font-size: 1.5rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; overflow: hidden; }
+        .placeholder { color: #475569; font-weight: 400; font-size: 1.1rem; }
         
-        .c-label { font-size: 0.7rem; color: #cbd5e1; }
-        .c-val { font-size: 1.3rem; font-weight: 700; color: #fff; }
-        .c-unit { font-size: 0.8rem; color: #94a3b8; margin-left: 4px; }
+        /* 分裝總量 (唯讀結果) */
+        .read-only-box {
+            flex: 1; background: linear-gradient(135deg, #1e3a8a, #1e40af); 
+            border: 1px solid #3b82f6; border-radius: 12px; padding: 10px;
+        }
+        .ro-label { font-size: 0.75rem; color: #bfdbfe; }
+        .ro-val { font-size: 1.4rem; font-weight: 700; color: white; }
+        .ro-unit { font-size: 0.8rem; margin-left: 2px; opacity: 0.8; }
 
-        /* --- 底部儀表板 (雙欄) --- */
+        /* --- 底部儀表板 --- */
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #334155; }
         .card { background: #064e3b; border: 1px solid #059669; border-radius: 10px; padding: 8px; text-align: center; }
         .card-gray { background: #1f2937; border-color: #374151; }
@@ -64,22 +61,17 @@
         .d-sub { font-size: 0.7rem; color: #6ee7b7; }
 
         /* --- 鍵盤區 --- */
-        .keypad { height: 42vh; background-color: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
-        .key { background: #1e293b; color: #f8fafc; font-size: 1.5rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
+        .keypad { height: 42vh; background-color: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
+        .key { background: #1e293b; color: #f8fafc; font-size: 1.6rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
         .key:active { background: #475569; }
-        .k-func { background: #334155; font-size: 1rem; color: #cbd5e1; }
+        .k-func { background: #334155; font-size: 1.1rem; color: #cbd5e1; }
         .k-del { color: #f87171; background: #334155; }
-        .k-go { background: #2563eb; color: white; grid-row: span 2; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; line-height: 1.2; }
+        .k-go { background: #2563eb; color: white; grid-row: span 2; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; line-height: 1.2; }
     </style>
 </head>
 <body onload="init()">
 
     <div class="content-area">
-        <div class="flex justify-between items-center px-1 mb-1">
-            <span class="text-xs text-gray-400">🔢 雙欄輸入模式</span>
-            <button onclick="resetAll()" class="text-xs bg-gray-700 px-3 py-1 rounded-full text-gray-300">重置</button>
-        </div>
-
         <div class="chip-scroll">
             <button class="chip" onclick="quickSetSpec('60')">60瓶</button>
             <button class="chip" onclick="quickSetSpec('70')">70瓶</button>
@@ -106,19 +98,20 @@
                 <div class="val-display placeholder" id="val-avg">輸入</div>
             </div>
             <div class="input-box active" id="box-bottles" onclick="focusField('bottles')">
-                <div class="label">💊 3. 成品(瓶)</div>
+                <div class="label">💊 3. 成品(數)</div>
                 <div class="val-display placeholder" id="val-bottles">輸入</div>
             </div>
         </div>
 
-        <div class="calc-row">
-            <div class="calc-box highlight">
-                <div class="c-label">總量 (Avg×數)</div>
-                <div><span class="c-val" id="res-total">-</span><span class="c-unit">Kg</span></div>
+        <div class="input-row">
+            <div class="read-only-box">
+                <div class="ro-label">總量 (Avg×數)</div>
+                <div><span class="ro-val" id="res-total">-</span><span class="ro-unit">Kg</span></div>
             </div>
-            <div class="calc-box">
-                <div class="c-label">剩餘 (移入-總)</div>
-                <div><span class="c-val" id="res-remain">-</span><span class="c-unit">Kg</span></div>
+            
+            <div class="input-box editable-result" id="box-remain" onclick="focusField('remain')">
+                <div class="label">📉 剩餘(可改)</div>
+                <div class="val-display placeholder" id="val-remain">-</div>
             </div>
         </div>
 
@@ -159,18 +152,20 @@
     <script>
         // --- 狀態管理 ---
         let curr = 'bottles'; 
-        // 循環順序：移入 -> 平均 -> 數量 -> 回到移入
-        const order = ['in', 'avg', 'bottles']; 
-        const data = { spec: '60', in: '', avg: '', bottles: '' };
+        // 循環順序：移入 -> 平均 -> 數量 -> 剩餘 -> 回到移入
+        const order = ['in', 'avg', 'bottles', 'remain']; 
         
-        // --- DOM ---
+        const data = { spec: '60', in: '', avg: '', bottles: '', remain: '' };
+        
+        // --- DOM 快取 ---
         const els = {
             spec: document.getElementById('val-spec'),
             in: document.getElementById('val-in'),
             avg: document.getElementById('val-avg'),
             bottles: document.getElementById('val-bottles'),
+            remain: document.getElementById('val-remain'),
+            
             resTotal: document.getElementById('res-total'),
-            resRemain: document.getElementById('res-remain'),
             resBox: document.getElementById('res-box'),
             resBoxDet: document.getElementById('res-box-det'),
             resYield: document.getElementById('res-yield'),
@@ -179,7 +174,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v55_spec'); // 更新儲存key
+            const saved = localStorage.getItem('v56_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -187,7 +182,8 @@
         // --- 互動邏輯 ---
         function focusField(id) {
             curr = id;
-            ['spec', 'in', 'avg', 'bottles'].forEach(k => {
+            // 更新 UI 邊框
+            ['spec', 'in', 'avg', 'bottles', 'remain'].forEach(k => {
                 const el = document.getElementById('box-'+k);
                 if(el) el.classList.remove('active');
             });
@@ -198,6 +194,7 @@
             data.spec = val;
             els.spec.innerText = val;
             
+            // 按鈕樣式更新
             document.querySelectorAll('.chip').forEach(btn => {
                 if(btn.innerText.includes(val)) btn.classList.add('selected');
                 else btn.classList.remove('selected');
@@ -207,16 +204,17 @@
 
         // --- 鍵盤邏輯 ---
         function press(key) {
-            let val = data[curr];
+            let val = data[curr] || '';
             if(key === '.' && val.includes('.')) return;
             if(val.length > 8) return;
-            data[curr] += key;
+            data[curr] = val + key;
             updateView(curr);
             calc();
         }
 
         function del() {
-            data[curr] = data[curr].slice(0, -1);
+            let val = data[curr] || '';
+            data[curr] = val.slice(0, -1);
             updateView(curr);
             calc();
         }
@@ -229,63 +227,74 @@
 
         function next() {
             let idx = order.indexOf(curr);
-            if (idx === -1) {
-                focusField('in');
-            } else {
-                focusField(order[(idx + 1) % order.length]);
-            }
+            if (idx === -1) focusField('in');
+            else focusField(order[(idx + 1) % order.length]);
         }
         function prev() {
             let idx = order.indexOf(curr);
-            if (idx === -1) {
-                 focusField('bottles');
-            } else {
-                focusField(order[(idx - 1 + order.length) % order.length]);
-            }
+            if (idx === -1) focusField('bottles');
+            else focusField(order[(idx - 1 + order.length) % order.length]);
         }
 
         function updateView(id) {
             const el = els[id];
             const val = data[id];
-            if(val === '') {
-                el.innerText = '輸入';
-                el.classList.add('placeholder');
+            
+            if (!val || val === '') {
+                if(id === 'spec') el.innerText = '輸入';
+                else el.innerText = (id==='remain') ? '-' : '輸入';
+                
+                if(id !== 'remain') el.classList.add('placeholder');
             } else {
                 el.innerText = val;
                 el.classList.remove('placeholder');
             }
         }
 
-        // --- 核心計算 ---
+        // --- 核心計算 (含特殊邏輯) ---
         function calc() {
-            localStorage.setItem('v55_spec', data.spec);
+            localStorage.setItem('v56_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
-            const i = parseFloat(data.in) || 0;     // 移入量
-            const a = parseFloat(data.avg) || 0;    // 平均重 (g)
-            const b = parseFloat(data.bottles) || 0;// 成品數
+            const i = parseFloat(data.in) || 0;
+            const a = parseFloat(data.avg) || 0;
+            let b = parseFloat(data.bottles) || 0; // 原始輸入數量
 
-            // 1. 計算總量 = Avg(g) * Bottles / 1000
+            // ★★★ 特殊邏輯 1：如果是 "6 (K裝)"，實際數量要先乘以 5 ★★★
+            let actualBottles = b;
+            if (data.spec === '6') {
+                actualBottles = b * 5; 
+            }
+
+            // 1. 計算總量 = Avg(g) * 實際數量 / 1000
             let totalKg = 0;
-            if(a > 0 && b > 0) {
-                totalKg = (a * b) / 1000;
+            if (a > 0 && actualBottles > 0) {
+                totalKg = (a * actualBottles) / 1000;
                 els.resTotal.innerText = totalKg.toFixed(2);
             } else {
                 els.resTotal.innerText = "-";
             }
 
-            // 2. 計算剩餘 = Input - Total
-            if(i > 0 && totalKg > 0) {
-                const remain = i - totalKg;
-                els.resRemain.innerText = remain.toFixed(2);
-                if(remain < 0) els.resRemain.style.color = "#f87171";
-                else els.resRemain.style.color = "#fff";
-            } else {
-                els.resRemain.innerText = "-";
+            // 2. 計算剩餘
+            // ★★★ 特殊邏輯 2：如果使用者沒有手動點擊「剩餘」欄位輸入，就自動計算
+            // 如果當前正在編輯 'remain'，就不自動覆蓋，讓使用者自己打
+            if (curr !== 'remain') {
+                if (i > 0 && totalKg > 0) {
+                    const autoRemain = (i - totalKg).toFixed(2);
+                    data.remain = autoRemain;
+                    updateView('remain');
+                } else if (data.remain === '' && i === 0) {
+                    // 如果沒輸入且沒移入量，清空
+                    data.remain = '';
+                    updateView('remain');
+                }
             }
 
-            // 3. 計算產率 = Total / Input
-            if(i > 0 && totalKg > 0) {
+            // 取得當前的剩餘量 (不管是自動算的還是手打的)
+            const currentRemain = parseFloat(data.remain) || 0;
+
+            // 3. 計算產率 (用自動算的 TotalKg 來算，比較準)
+            if (i > 0 && totalKg > 0) {
                 const y = (totalKg / i) * 100;
                 els.resYield.innerText = y.toFixed(2) + "%";
                 if(y < 98 || y > 102) {
@@ -300,10 +309,10 @@
                 els.cardYield.style.background = "#064e3b";
             }
 
-            // 4. 計算箱數
-            if(spec > 0 && b > 0) {
-                const full = Math.floor(b / spec);
-                const rem = b % spec;
+            // 4. 計算箱數 (用實際數量算)
+            if (spec > 0 && actualBottles > 0) {
+                const full = Math.floor(actualBottles / spec);
+                const rem = actualBottles % spec;
                 const totalBox = rem > 0 ? full + 1 : full;
                 els.resBox.innerText = totalBox + " 箱";
                 els.resBoxDet.innerText = `(${full}整 + 餘${rem})`;
@@ -314,8 +323,8 @@
         }
 
         function resetAll() {
-            data.in = ''; data.avg = ''; data.bottles = '';
-            updateView('in'); updateView('avg'); updateView('bottles');
+            data.in = ''; data.avg = ''; data.bottles = ''; data.remain = '';
+            updateView('in'); updateView('avg'); updateView('bottles'); updateView('remain');
             focusField('bottles');
             calc();
         }
