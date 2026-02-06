@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>產線計算機 V15</title>
+<style>
+  /* --- CSS 樣式 --- */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background-color: #0f172a;
+    color: #fff;
+    font-family: sans-serif;
+    margin: 0; padding: 0;
+    /* 允許頁面自然捲動，解決手機卡死問題 */
+    overflow-y: auto; 
+    padding-bottom: 350px; /* 預留底部鍵盤空間 */
+  }
+
+  /* 頂部按鈕區 */
+  .header {
+    background: #0f172a;
+    padding: 10px;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid #334155;
+  }
+  .top-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .reset-btn { background: #334155; color: #cbd5e1; border: none; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+
+  /* 橫向捲動按鈕 */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+  .chip {
+    background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+    padding: 10px 0; width: 70px; border-radius: 8px;
+    font-size: 16px; font-weight: bold; text-align: center;
+    flex-shrink: 0;
+  }
+  .chip.active { background: #2563eb; color: white; border-color: #60a5fa; }
+
+  /* 內容區 */
+  .content { padding: 15px; }
+
+  /* 輸入框 */
+  .input-box {
+    background: #1e293b; border: 2px solid #334155;
+    border-radius: 10px; padding: 10px;
+    margin-bottom: 10px;
+    min-height: 75px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .input-box.focus { border-color: #3b82f6; background: #172554; }
+  .label { font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+  .val { font-size: 24px; font-weight: bold; }
+  .placeholder { color: #555; }
+
+  /* 雙欄排版 */
+  .row { display: flex; gap: 10px; }
+  .col-50 { flex: 1; }
+
+  /* 結果區 */
+  .dashboard {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155;
+  }
+  .card { background: #064e3b; border: 1px solid #059669; padding: 10px; border-radius: 10px; text-align: center; }
+  .card.lg { grid-column: span 2; background: #1e3a8a; border-color: #3b82f6; }
+  .card.gray { background: #334151; border-color: #4b5563; }
+  .c-tit { font-size: 12px; color: #a7f3d0; }
+  .c-val { font-size: 22px; font-weight: bold; }
+  .c-sub { font-size: 12px; color: #6ee7b7; }
+
+  /* 底部固定鍵盤 */
+  .footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 300px; background: #0f172a;
+    border-top: 1px solid #334155;
+    z-index: 20;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+  }
+  .key {
+    background: #1e293b; color: #fff;
+    font-size: 24px; font-weight: bold;
+    border: 1px solid #0f172a;
+    margin: 1px;
+  }
+  .key:active { background: #444; }
+  .k-del { color: #ff6666; background: #334155; }
+  .k-go { background: #2563eb; grid-row: span 2; }
+</style>
+</head>
+<body onload="init()">
+
+<div class="header">
+  <div class="top-row">
+    <span style="color:#aaa">📦 規格選擇</span>
+    <button class="reset-btn" onclick="resetAll()">重置</button>
+  </div>
+  <div class="chips">
+    <div class="chip" id="c60" onclick="setSpec('60')">60</div>
+    <div class="chip" id="c84" onclick="setSpec('84')">84</div>
+    <div class="chip" id="c70" onclick="setSpec('70')">70</div>
+    <div class="chip" id="c100" onclick="setSpec('100')">100</div>
+    <div class="chip" id="c12" onclick="setSpec('12')">12丸</div>
+    <div class="chip" id="c6" onclick="setSpec('6')">6K</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="input-box" id="box-spec" onclick="focusField('spec')">
+    <div class="label">📦 每箱規格 (瓶/盒)</div>
+    <div class="val" id="v-spec">60</div>
+  </div>
+
+  <div class="row">
+    <div class="input-box col-50" id="box-in" onclick="focusField('in')">
+      <div class="label">1.移入量 (Kg)</div>
+      <div class="val placeholder" id="v-in">輸入...</div>
+    </div>
+    <div class="input-box col-50" id="box-bottles" onclick="focusField('bottles')">
+      <div class="label">2.成品數 (瓶)</div>
+      <div class="val placeholder" id="v-bottles">輸入...</div>
+    </div>
+  </div>
+
+  <div class="input-box" id="box-out" onclick="focusField('out')">
+    <div class="label">3.分裝總量 (Kg)</div>
+    <div class="val placeholder" id="v-out">輸入...</div>
+  </div>
+
+  <div class="dashboard">
+    <div class="card lg">
+      <div class="c-tit" style="color:#bfdbfe">入庫總箱數</div>
+      <div class="c-val" id="r-box">-</div>
+      <div class="c-sub" style="color:#93c5fd" id="r-detail">等待數據</div>
+    </div>
+    <div class="card" id="card-yield">
+      <div class="c-tit">產率 (%)</div>
+      <div class="c-val" id="r-yield">-</div>
+    </div>
+    <div class="card gray">
+      <div class="c-tit">平均重 (g)</div>
+      <div class="c-val" id="r-avg">-</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <button class="key" onclick="press('7')">7</button>
+  <button class="key" onclick="press('8')">8</button>
+  <button class="key" onclick="press('9')">9</button>
+  <button class="key k-del" onclick="del()">⌫</button>
+
+  <button class="key" onclick="press('4')">4</button>
+  <button class="key" onclick="press('5')">5</button>
+  <button class="key" onclick="press('6')">6</button>
+  <button class="key" style="font-size:18px; color:#ccc" onclick="clearField()">C</button>
+
+  <button class="key" onclick="press('1')">1</button>
+  <button class="key" onclick="press('2')">2</button>
+  <button class="key" onclick="press('3')">3</button>
+  <button class="key k-go" onclick="next()">▼</button>
+
+  <button class="key" onclick="press('0')">0</button>
+  <button class="key" onclick="press('.')">.</button>
+  <button class="key" style="font-size:18px; color:#ccc" onclick="prev()">▲</button>
+</div>
+
+<script>
+  // 使用最傳統的 JS 語法 (var, function) 確保相容性
+  var data = { spec: '60', in: '', bottles: '', out: '' };
+  var curr = 'bottles';
+  var fields = ['spec', 'in', 'bottles', 'out'];
+
+  function init() {
+    var saved = localStorage.getItem('v15_spec');
+    if (saved) {
+      setSpec(saved, false);
+    } else {
+      setSpec('60', false);
+    }
+    focusField('bottles');
+  }
+
+  function setSpec(val, jump) {
+    data.spec = val;
+    // 更新按鈕
+    var chips = document.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.remove('active');
+    }
+    var target = document.getElementById('c' + val);
+    if (target) target.classList.add('active');
+
+    updateUI('spec');
+    calc();
+    if (jump !== false) focusField('bottles');
+  }
+
+  function focusField(id) {
+    curr = id;
+    // 移除所有 focus
+    var boxes = document.querySelectorAll('.input-box');
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].classList.remove('focus');
+    }
+    document.getElementById('box-' + id).classList.add('focus');
+  }
+
+  function press(key) {
+    var val = data[curr];
+    if (key === '.' && val.indexOf('.') !== -1) return;
+    if (val.length > 8) return;
+    data[curr] += key;
+    updateUI(curr);
+    
+    // 如果是手動改規格，連動按鈕
+    if (curr === 'spec') {
+      var chips = document.querySelectorAll('.chip');
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.remove('active');
+      }
+      var target = document.getElementById('c' + data.spec);
+      if (target) target.classList.add('active');
+    }
+
+    calc();
+  }
+
+  function del() {
+    data[curr] = data[curr].slice(0, -1);
+    updateUI(curr);
+    calc();
+  }
+
+  function clearField() {
+    data[curr] = '';
+    updateUI(curr);
+    calc();
+  }
+
+  function resetAll() {
+    data.in = ''; data.bottles = ''; data.out = '';
+    updateUI('in'); updateUI('bottles'); updateUI('out');
+    focusField('bottles');
+    calc();
+  }
+
+  function next() {
+    var idx = fields.indexOf(curr);
+    // 循環邏輯：如果目前是 spec 或 out，都跳回 in，形成工作流循環
+    if (curr === 'spec' || curr === 'out') focusField('in');
+    else focusField(fields[idx + 1]);
+  }
+
+  function prev() {
+    var idx = fields.indexOf(curr);
+    var prevIdx = (idx - 1 + fields.length) % fields.length;
+    focusField(fields[prevIdx]);
+  }
+
+  function updateUI(id) {
+    var el = document.getElementById('v-' + id);
+    var val = data[id];
+    if (val === '') {
+      if (id === 'spec') {
+        el.innerText = ''; 
+      } else {
+        el.innerText = '輸入...';
+        el.className = 'val placeholder';
+      }
+    } else {
+      el.innerText = val;
+      el.className = 'val';
+    }
+  }
+
+  function calc() {
+    localStorage.setItem('v15_spec', data.spec);
+    var s = parseFloat(data.spec) || 0;
+    var b = parseFloat(data.bottles) || 0;
+    var i = parseFloat(data.in) || 0;
+    var o = parseFloat(data.out) || 0;
+
+    // 箱數
+    var rb = document.getElementById('r-box');
+    var rd = document.getElementById('r-detail');
+    if (s > 0 && b > 0) {
+      var full = Math.floor(b / s);
+      var rem = b % s;
+      var total = rem > 0 ? full + 1 : full;
+      rb.innerText = total + " 箱";
+      rd.innerText = "(" + full + "整 + 餘" + rem + ")";
+    } else {
+      rb.innerText = "-";
+      rd.innerText = "等待數據";
+    }
+
+    // 產率
+    var ry = document.getElementById('r-yield');
+    var cy = document.getElementById('card-yield');
+    if (i > 0 && o > 0) {
+      var y = (o / i) * 100;
+      ry.innerText = y.toFixed(2) + "%";
+      if (y < 98 || y > 102) {
+        cy.style.background = "#7f1d1d"; cy.style.borderColor = "#f87171";
+      } else {
+        cy.style.background = "#064e3b"; cy.style.borderColor = "#059669";
+      }
+    } else {
+      ry.innerText = "-"; cy.style.background = "#064e3b";
+    }
+
+    // 平均重
+    var ra = document.getElementById('r-avg');
+    if (o > 0 && b > 0) {
+      var avg = (o * 1000) / b;
+      ra.innerText = avg.toFixed(2);
+    } else {
+      ra.innerText = "-";
+    }
+  }
+</script>
+</body>
+</html>
