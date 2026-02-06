@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.2</title>
+    <title>產線計算機 V5.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -144,7 +144,6 @@
     <script>
         // --- 狀態管理 ---
         let curr = 'bottles'; 
-        // 循環輸入順序：移入 -> 平均 -> 數量 -> 回到移入
         const order = ['in', 'avg', 'bottles']; 
         
         const data = { spec: '60', in: '', avg: '', bottles: '' };
@@ -155,8 +154,6 @@
             in: document.getElementById('val-in'),
             avg: document.getElementById('val-avg'),
             bottles: document.getElementById('val-bottles'),
-            
-            // 結果顯示
             resTotal: document.getElementById('res-total'),
             resRemain: document.getElementById('res-remain'),
             resBox: document.getElementById('res-box'),
@@ -167,7 +164,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v52_spec'); // 更新儲存key
+            const saved = localStorage.getItem('v53_spec'); // 更新儲存key，避免讀到舊資料
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -175,12 +172,10 @@
         // --- 互動邏輯 ---
         function focusField(id) {
             curr = id;
-            // 移除所有 active
             ['spec', 'in', 'avg', 'bottles'].forEach(k => {
                 const el = document.getElementById('box-'+k);
                 if(el) el.classList.remove('active');
             });
-            // 加入當前 active
             document.getElementById('box-'+id).classList.add('active');
         }
 
@@ -220,7 +215,6 @@
         function next() {
             let idx = order.indexOf(curr);
             if (idx === -1) {
-                // 如果現在停在 spec (不在循環內)，按下一格去 'in'
                 focusField('in');
             } else {
                 focusField(order[(idx + 1) % order.length]);
@@ -254,14 +248,14 @@
 
         // --- 核心計算 ---
         function calc() {
-            localStorage.setItem('v52_spec', data.spec);
+            localStorage.setItem('v53_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;     // 移入量
             const a = parseFloat(data.avg) || 0;    // 平均重 (g)
             const b = parseFloat(data.bottles) || 0;// 成品數
 
-            // 1. 計算總量 (Total Weight) = Avg(g) * Bottles / 1000
+            // 1. 計算總量
             let totalKg = 0;
             if(a > 0 && b > 0) {
                 totalKg = (a * b) / 1000;
@@ -270,7 +264,7 @@
                 els.resTotal.innerText = "-";
             }
 
-            // 2. 計算剩餘 (Remaining) = Input - Total
+            // 2. 計算剩餘
             if(i > 0 && totalKg > 0) {
                 const remain = i - totalKg;
                 els.resRemain.innerText = remain.toFixed(2);
@@ -280,7 +274,7 @@
                 els.resRemain.innerText = "-";
             }
 
-            // 3. 計算產率 (Yield) = Total / Input
+            // 3. 計算產率
             if(i > 0 && totalKg > 0) {
                 const y = (totalKg / i) * 100;
                 els.resYield.innerText = y.toFixed(2) + "%";
@@ -311,7 +305,6 @@
 
         function resetAll() {
             data.in = ''; data.avg = ''; data.bottles = '';
-            // 不清空 spec
             updateView('in'); updateView('avg'); updateView('bottles');
             focusField('bottles');
             calc();
