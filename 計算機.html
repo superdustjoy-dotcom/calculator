@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.1</title>
+    <title>產線計算機 V5.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -144,9 +144,7 @@
     <script>
         // --- 狀態管理 ---
         let curr = 'bottles'; 
-        // 為了方便，這裡設定鍵盤的「下一個」按鍵循環順序
-        // 如果您想要按「下一個」能跳到規格格，可以把 'spec' 加進去
-        // 目前設定：移入 -> 平均 -> 數量 -> 回到移入 (規格通常設定一次不動，所以不放進循環，避免一直跳上去)
+        // 循環輸入順序：移入 -> 平均 -> 數量 -> 回到移入
         const order = ['in', 'avg', 'bottles']; 
         
         const data = { spec: '60', in: '', avg: '', bottles: '' };
@@ -169,7 +167,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v51_spec');
+            const saved = localStorage.getItem('v52_spec'); // 更新儲存key
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -241,7 +239,6 @@
             const el = els[id];
             const val = data[id];
             if(val === '') {
-                // 如果是規格，空值顯示 0 或提示，其他顯示 placeholder
                 if(id === 'spec') {
                     el.innerText = '輸入...';
                     el.classList.add('placeholder');
@@ -257,7 +254,7 @@
 
         // --- 核心計算 ---
         function calc() {
-            localStorage.setItem('v51_spec', data.spec);
+            localStorage.setItem('v52_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;     // 移入量
