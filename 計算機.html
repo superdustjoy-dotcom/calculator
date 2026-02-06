@@ -33,7 +33,7 @@
         .val-display { font-size: 1.6rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; }
         .placeholder { color: #475569; font-weight: 400; font-size: 1.2rem; }
 
-        /* --- 計算結果區 --- */
+        /* --- 計算結果區 (雙欄) --- */
         .calc-row { display: flex; gap: 8px; margin-bottom: 8px; }
         .calc-box { flex: 1; background: #334155; border-radius: 10px; padding: 8px 12px; border: 1px solid #475569; position: relative; }
         .calc-box.highlight { background: linear-gradient(135deg, #1e3a8a, #1e40af); border-color: #3b82f6; }
@@ -42,7 +42,7 @@
         .c-val { font-size: 1.3rem; font-weight: 700; color: #fff; }
         .c-unit { font-size: 0.8rem; color: #94a3b8; margin-left: 4px; }
 
-        /* --- 底部儀表板 --- */
+        /* --- 底部儀表板 (雙欄) --- */
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #334155; }
         .card { background: #064e3b; border: 1px solid #059669; border-radius: 10px; padding: 8px; text-align: center; }
         .card-gray { background: #1f2937; border-color: #374151; }
@@ -64,7 +64,7 @@
 
     <div class="content-area">
         <div class="flex justify-between items-center px-1 mb-1">
-            <span class="text-xs text-gray-400">🔢 點按鈕選規格，或點框框手動輸入</span>
+            <span class="text-xs text-gray-400">🔢 點選規格或點擊輸入</span>
             <button onclick="resetAll()" class="text-xs bg-gray-700 px-3 py-1 rounded-full text-gray-300">重置</button>
         </div>
 
@@ -154,6 +154,8 @@
             in: document.getElementById('val-in'),
             avg: document.getElementById('val-avg'),
             bottles: document.getElementById('val-bottles'),
+            
+            // 結果顯示
             resTotal: document.getElementById('res-total'),
             resRemain: document.getElementById('res-remain'),
             resBox: document.getElementById('res-box'),
@@ -164,7 +166,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v53_spec'); // 更新儲存key，避免讀到舊資料
+            const saved = localStorage.getItem('v53_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -255,7 +257,7 @@
             const a = parseFloat(data.avg) || 0;    // 平均重 (g)
             const b = parseFloat(data.bottles) || 0;// 成品數
 
-            // 1. 計算總量
+            // 1. 計算總量 = Avg(g) * Bottles / 1000
             let totalKg = 0;
             if(a > 0 && b > 0) {
                 totalKg = (a * b) / 1000;
@@ -264,7 +266,7 @@
                 els.resTotal.innerText = "-";
             }
 
-            // 2. 計算剩餘
+            // 2. 計算剩餘 = Input - Total
             if(i > 0 && totalKg > 0) {
                 const remain = i - totalKg;
                 els.resRemain.innerText = remain.toFixed(2);
@@ -274,7 +276,7 @@
                 els.resRemain.innerText = "-";
             }
 
-            // 3. 計算產率
+            // 3. 計算產率 = Total / Input
             if(i > 0 && totalKg > 0) {
                 const y = (totalKg / i) * 100;
                 els.resYield.innerText = y.toFixed(2) + "%";
