@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.4</title>
+    <title>產線計算機 V5.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -23,19 +23,27 @@
         .chip:active { transform: scale(0.95); }
         .chip.selected { background-color: #2563eb; border-color: #60a5fa; color: white; }
 
-        /* --- 輸入框樣式 --- */
-        .input-group-row { display: flex; gap: 8px; margin-bottom: 8px; } /* 雙欄容器 */
+        /* --- 輸入框排版系統 (雙欄) --- */
+        .input-row { display: flex; gap: 8px; margin-bottom: 8px; } /* 每一列的容器 */
         
-        .input-box { background-color: #1e293b; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; border: 2px solid #334155; transition: all 0.15s; position: relative; }
-        .input-box-half { flex: 1; margin-bottom: 0; } /* 雙欄專用 */
+        .input-box { 
+            flex: 1; /* 自動平分寬度 */
+            background-color: #1e293b; 
+            border-radius: 12px; 
+            padding: 8px 10px; 
+            border: 2px solid #334155; 
+            transition: all 0.15s; 
+            position: relative; 
+            min-width: 0; /* 防止文字撐爆 */
+        }
         
         .input-box.active { border-color: #3b82f6; background-color: #172554; }
         
-        .label { font-size: 0.75rem; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .active .label { color: #60a5fa; }
         
-        .val-display { font-size: 1.5rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; overflow: hidden; }
-        .placeholder { color: #475569; font-weight: 400; font-size: 1.1rem; }
+        .val-display { font-size: 1.4rem; font-weight: 700; color: white; min-height: 30px; line-height: 1.2; display: flex; align-items: center; overflow: hidden; }
+        .placeholder { color: #475569; font-weight: 400; font-size: 1rem; }
 
         /* --- 計算結果區 (雙欄) --- */
         .calc-row { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -56,7 +64,7 @@
         .d-sub { font-size: 0.7rem; color: #6ee7b7; }
 
         /* --- 鍵盤區 --- */
-        .keypad { height: 40vh; background-color: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+        .keypad { height: 42vh; background-color: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
         .key { background: #1e293b; color: #f8fafc; font-size: 1.5rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
         .key:active { background: #475569; }
         .k-func { background: #334155; font-size: 1rem; color: #cbd5e1; }
@@ -68,38 +76,39 @@
 
     <div class="content-area">
         <div class="flex justify-between items-center px-1 mb-1">
-            <span class="text-xs text-gray-400">🔢 點選或手動輸入</span>
+            <span class="text-xs text-gray-400">🔢 雙欄輸入模式</span>
             <button onclick="resetAll()" class="text-xs bg-gray-700 px-3 py-1 rounded-full text-gray-300">重置</button>
         </div>
 
         <div class="chip-scroll">
             <button class="chip" onclick="quickSetSpec('60')">60瓶</button>
-            <button class="chip" onclick="quickSetSpec('70')">70瓶</button> <button class="chip" onclick="quickSetSpec('84')">84瓶</button>
+            <button class="chip" onclick="quickSetSpec('70')">70瓶</button>
+            <button class="chip" onclick="quickSetSpec('84')">84瓶</button>
             <button class="chip" onclick="quickSetSpec('100')">100瓶</button>
             <button class="chip" onclick="quickSetSpec('12')">12 (丸)</button>
             <button class="chip" onclick="quickSetSpec('6')">6 (K裝)</button>
         </div>
 
-        <div class="input-box" id="box-spec" onclick="focusField('spec')">
-            <div class="label">📦 0. 規格 (可自填)</div>
-            <div class="val-display" id="val-spec">60</div>
-        </div>
-
-        <div class="input-group-row">
-            <div class="input-box input-box-half" id="box-in" onclick="focusField('in')">
+        <div class="input-row">
+            <div class="input-box" id="box-spec" onclick="focusField('spec')">
+                <div class="label">📦 0. 規格</div>
+                <div class="val-display" id="val-spec">60</div>
+            </div>
+            <div class="input-box" id="box-in" onclick="focusField('in')">
                 <div class="label">⚖️ 1. 移入(Kg)</div>
                 <div class="val-display placeholder" id="val-in">輸入</div>
             </div>
+        </div>
 
-            <div class="input-box input-box-half" id="box-avg" onclick="focusField('avg')">
+        <div class="input-row">
+            <div class="input-box" id="box-avg" onclick="focusField('avg')">
                 <div class="label">📏 2. 平均(g)</div>
                 <div class="val-display placeholder" id="val-avg">輸入</div>
             </div>
-        </div>
-
-        <div class="input-box active" id="box-bottles" onclick="focusField('bottles')">
-            <div class="label">💊 3. 成品總數 (瓶/盒)</div>
-            <div class="val-display placeholder" id="val-bottles">點擊輸入...</div>
+            <div class="input-box active" id="box-bottles" onclick="focusField('bottles')">
+                <div class="label">💊 3. 成品(瓶)</div>
+                <div class="val-display placeholder" id="val-bottles">輸入</div>
+            </div>
         </div>
 
         <div class="calc-row">
@@ -150,8 +159,8 @@
     <script>
         // --- 狀態管理 ---
         let curr = 'bottles'; 
+        // 循環順序：移入 -> 平均 -> 數量 -> 回到移入
         const order = ['in', 'avg', 'bottles']; 
-        
         const data = { spec: '60', in: '', avg: '', bottles: '' };
         
         // --- DOM ---
@@ -160,7 +169,6 @@
             in: document.getElementById('val-in'),
             avg: document.getElementById('val-avg'),
             bottles: document.getElementById('val-bottles'),
-            
             resTotal: document.getElementById('res-total'),
             resRemain: document.getElementById('res-remain'),
             resBox: document.getElementById('res-box'),
@@ -171,7 +179,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v54_spec');
+            const saved = localStorage.getItem('v55_spec'); // 更新儲存key
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -240,13 +248,8 @@
             const el = els[id];
             const val = data[id];
             if(val === '') {
-                if(id === 'spec') {
-                    el.innerText = '輸入';
-                    el.classList.add('placeholder');
-                } else {
-                    el.innerText = '輸入';
-                    el.classList.add('placeholder');
-                }
+                el.innerText = '輸入';
+                el.classList.add('placeholder');
             } else {
                 el.innerText = val;
                 el.classList.remove('placeholder');
@@ -255,7 +258,7 @@
 
         // --- 核心計算 ---
         function calc() {
-            localStorage.setItem('v54_spec', data.spec);
+            localStorage.setItem('v55_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;     // 移入量
