@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.8</title>
+    <title>產線計算機 V5.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -170,7 +170,7 @@
         };
 
         function init() {
-            const saved = localStorage.getItem('v58_spec');
+            const saved = localStorage.getItem('v59_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -183,22 +183,18 @@
             document.getElementById('box-'+id).classList.add('active');
         }
 
-        // 修改後的按鈕亮燈邏輯
         function quickSetSpec(val) {
             data.spec = val;
-            els.spec.innerText = val; // 介面直接顯示 30
+            els.spec.innerText = val; 
             
             document.querySelectorAll('.chip').forEach(btn => {
-                btn.classList.remove('selected'); // 先全部移除
+                btn.classList.remove('selected');
                 
-                // 邏輯修正：嚴格區分 K裝 (30) 與 一般 (60, 70...)
-                // 1. 如果選的是 30 (K裝)，只亮 ID 為 btn-k 的按鈕
+                // 亮燈邏輯
                 if (val === '30' && btn.id === 'btn-k') {
                     btn.classList.add('selected');
                 }
-                // 2. 如果選的不是 30，且按鈕不是 K裝按鈕，再進行數字比對
                 else if (val !== '30' && btn.id !== 'btn-k') {
-                    // 取出按鈕上的純數字 (例如 "60瓶" -> "60")
                     let btnNum = btn.innerText.match(/\d+/); 
                     if (btnNum && btnNum[0] === val) {
                         btn.classList.add('selected');
@@ -256,17 +252,16 @@
             }
         }
 
-        // --- 核心計算 ---
+        // --- 核心計算 (產率公式修正) ---
         function calc() {
-            localStorage.setItem('v58_spec', data.spec);
+            localStorage.setItem('v59_spec', data.spec);
 
-            // 這裡 spec 會是 30 (如果是K裝) 或 60, 84...
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;
             const a = parseFloat(data.avg) || 0;
             const b = parseFloat(data.bottles) || 0;
 
-            // 1. 總量計算 (直接用輸入的數量算，不乘 5)
+            // 1. 總量計算
             let totalKg = 0;
             if (a > 0 && b > 0) {
                 totalKg = (a * b) / 1000;
@@ -275,7 +270,8 @@
                 els.resTotal.innerText = "-";
             }
 
-            // 2. 剩餘計算
+            // 2. 剩餘計算 (先處理剩餘量數值)
+            // 如果不是在手動編輯 remain 且資料可計算，就自動填入
             if (curr !== 'remain') {
                 if (i > 0 && totalKg > 0) {
                     const autoRemain = (i - totalKg).toFixed(2);
@@ -286,11 +282,19 @@
                     updateView('remain');
                 }
             }
+            
+            // 取得最終剩餘量數值 (不管是自動算的還是手動改的)
+            const finalRemain = parseFloat(data.remain) || 0;
 
-            // 3. 產率
-            if (i > 0 && totalKg > 0) {
-                const y = (totalKg / i) * 100;
+            // 3. 產率計算 (新公式：總量 / (移入 - 剩餘))
+            // 分母：實際消耗量 (移入 - 剩餘)
+            const actualConsumption = i - finalRemain;
+
+            if (actualConsumption > 0 && totalKg > 0) {
+                const y = (totalKg / actualConsumption) * 100;
                 els.resYield.innerText = y.toFixed(2) + "%";
+                
+                // 警示燈號
                 if(y < 98 || y > 102) {
                     els.cardYield.style.background = "#7f1d1d";
                     els.cardYield.style.borderColor = "#f87171";
