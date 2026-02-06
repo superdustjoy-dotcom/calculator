@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.6</title>
+    <title>產線計算機 V5.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- 基礎設定 --- */
@@ -78,7 +78,7 @@
             <button class="chip" onclick="quickSetSpec('84')">84瓶</button>
             <button class="chip" onclick="quickSetSpec('100')">100瓶</button>
             <button class="chip" onclick="quickSetSpec('12')">12 (丸)</button>
-            <button class="chip" onclick="quickSetSpec('6')">6 (K裝)</button>
+            <button class="chip" onclick="quickSetSpec('30')">30 (K裝)</button>
         </div>
 
         <div class="input-row">
@@ -152,7 +152,6 @@
     <script>
         // --- 狀態管理 ---
         let curr = 'bottles'; 
-        // 循環順序：移入 -> 平均 -> 數量 -> 剩餘 -> 回到移入
         const order = ['in', 'avg', 'bottles', 'remain']; 
         
         const data = { spec: '60', in: '', avg: '', bottles: '', remain: '' };
@@ -174,7 +173,7 @@
 
         // --- 初始化 ---
         function init() {
-            const saved = localStorage.getItem('v56_spec');
+            const saved = localStorage.getItem('v57_spec'); // 更新儲存 Key
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -182,7 +181,6 @@
         // --- 互動邏輯 ---
         function focusField(id) {
             curr = id;
-            // 更新 UI 邊框
             ['spec', 'in', 'avg', 'bottles', 'remain'].forEach(k => {
                 const el = document.getElementById('box-'+k);
                 if(el) el.classList.remove('active');
@@ -194,7 +192,6 @@
             data.spec = val;
             els.spec.innerText = val;
             
-            // 按鈕樣式更新
             document.querySelectorAll('.chip').forEach(btn => {
                 if(btn.innerText.includes(val)) btn.classList.add('selected');
                 else btn.classList.remove('selected');
@@ -251,20 +248,18 @@
             }
         }
 
-        // --- 核心計算 (含特殊邏輯) ---
+        // --- 核心計算 (已移除 *5 邏輯) ---
         function calc() {
-            localStorage.setItem('v56_spec', data.spec);
+            localStorage.setItem('v57_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;
             const a = parseFloat(data.avg) || 0;
-            let b = parseFloat(data.bottles) || 0; // 原始輸入數量
-
-            // ★★★ 特殊邏輯 1：如果是 "6 (K裝)"，實際數量要先乘以 5 ★★★
-            let actualBottles = b;
-            if (data.spec === '6') {
-                actualBottles = b * 5; 
-            }
+            const b = parseFloat(data.bottles) || 0; 
+            
+            // ★ 修改點：不再針對 6 或 30 做特殊乘法
+            // 現在邏輯：輸入多少瓶，就是多少瓶。
+            let actualBottles = b; 
 
             // 1. 計算總量 = Avg(g) * 實際數量 / 1000
             let totalKg = 0;
@@ -276,24 +271,19 @@
             }
 
             // 2. 計算剩餘
-            // ★★★ 特殊邏輯 2：如果使用者沒有手動點擊「剩餘」欄位輸入，就自動計算
-            // 如果當前正在編輯 'remain'，就不自動覆蓋，讓使用者自己打
+            // 如果沒在手動編輯剩餘量，就自動算
             if (curr !== 'remain') {
                 if (i > 0 && totalKg > 0) {
                     const autoRemain = (i - totalKg).toFixed(2);
                     data.remain = autoRemain;
                     updateView('remain');
                 } else if (data.remain === '' && i === 0) {
-                    // 如果沒輸入且沒移入量，清空
                     data.remain = '';
                     updateView('remain');
                 }
             }
 
-            // 取得當前的剩餘量 (不管是自動算的還是手打的)
-            const currentRemain = parseFloat(data.remain) || 0;
-
-            // 3. 計算產率 (用自動算的 TotalKg 來算，比較準)
+            // 3. 計算產率
             if (i > 0 && totalKg > 0) {
                 const y = (totalKg / i) * 100;
                 els.resYield.innerText = y.toFixed(2) + "%";
@@ -309,7 +299,7 @@
                 els.cardYield.style.background = "#064e3b";
             }
 
-            // 4. 計算箱數 (用實際數量算)
+            // 4. 計算箱數
             if (spec > 0 && actualBottles > 0) {
                 const full = Math.floor(actualBottles / spec);
                 const rem = actualBottles % spec;
