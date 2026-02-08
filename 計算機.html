@@ -2,15 +2,36 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>產線計算機 V5.9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>產線計算機 V6.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* --- 基礎設定 --- */
-        body { background-color: #0f172a; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; touch-action: manipulation; display: flex; flex-direction: column; height: 100vh; }
+        /* --- 基礎設定 (關鍵修正：改用 100dvh) --- */
+        body { 
+            background-color: #0f172a; 
+            color: #f3f4f6; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            overflow: hidden; 
+            touch-action: manipulation; 
+            display: flex; 
+            flex-direction: column; 
+            /* 修正：使用 dvh 確保扣除瀏覽器網址列高度 */
+            height: 100vh; 
+            height: 100dvh; 
+        }
 
-        /* --- 顯示區 --- */
-        .content-area { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+        /* --- 顯示區 (自動伸縮) --- */
+        .content-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            /* 修正：確保底部內容不貼底 */
+            padding-bottom: 20px; 
+        }
 
         /* --- 頂部快速選單 --- */
         .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 4px; flex-shrink: 0; scrollbar-width: none; }
@@ -60,8 +81,19 @@
         .d-val { font-size: 1.4rem; font-weight: 800; color: #fff; }
         .d-sub { font-size: 0.7rem; color: #6ee7b7; }
 
-        /* --- 鍵盤區 --- */
-        .keypad { height: 42vh; background-color: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
+        /* --- 鍵盤區 (關鍵修正：適配安全區域) --- */
+        .keypad { 
+            /* 使用 dvh 確保在不同瀏覽器高度一致 */
+            height: 42vh; 
+            height: 42dvh; 
+            background-color: #0f172a; 
+            border-top: 1px solid #334155; 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            /* 關鍵：加上底部安全距離，避免被 iPhone 橫條擋住 */
+            padding-bottom: env(safe-area-inset-bottom); 
+            flex-shrink: 0; 
+        }
         .key { background: #1e293b; color: #f8fafc; font-size: 1.6rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
         .key:active { background: #475569; }
         .k-func { background: #334155; font-size: 1.1rem; color: #cbd5e1; }
@@ -170,7 +202,7 @@
         };
 
         function init() {
-            const saved = localStorage.getItem('v59_spec');
+            const saved = localStorage.getItem('v60_spec');
             if(saved) quickSetSpec(saved);
             focusField('bottles');
         }
@@ -254,7 +286,7 @@
 
         // --- 核心計算 (產率公式修正) ---
         function calc() {
-            localStorage.setItem('v59_spec', data.spec);
+            localStorage.setItem('v60_spec', data.spec);
 
             const spec = parseFloat(data.spec) || 0;
             const i = parseFloat(data.in) || 0;
