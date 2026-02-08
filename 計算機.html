@@ -2,11 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>產線計算機 V6.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* --- 基礎設定 (使用 dvh 解決手機瀏覽器遮擋問題) --- */
+        /* --- 基礎設定 (關鍵修正：改用 100dvh) --- */
         body { 
             background-color: #0f172a; 
             color: #f3f4f6; 
@@ -16,27 +16,30 @@
             touch-action: manipulation; 
             display: flex; 
             flex-direction: column; 
-            height: 100vh; /* 相容舊版 */
-            height: 100dvh; /* 關鍵：動態視窗高度 */
+            /* 修正：使用 dvh 確保扣除瀏覽器網址列高度 */
+            height: 100vh; 
+            height: 100dvh; 
         }
 
-        /* --- 顯示區 (彈性伸縮，確保不被鍵盤擠壓) --- */
+        /* --- 顯示區 (自動伸縮) --- */
         .content-area { 
             flex: 1; 
             overflow-y: auto; 
-            padding: 10px 12px; /* 稍微縮減邊距讓畫面更緊湊 */
+            padding: 12px; 
             display: flex; 
             flex-direction: column; 
-            gap: 6px; 
+            gap: 8px; 
+            /* 修正：確保底部內容不貼底 */
+            padding-bottom: 20px; 
         }
 
         /* --- 頂部快速選單 --- */
-        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 2px; flex-shrink: 0; scrollbar-width: none; }
+        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 4px; flex-shrink: 0; scrollbar-width: none; }
         .chip-scroll::-webkit-scrollbar { display: none; }
         
         .chip {
             white-space: nowrap; background-color: #1e293b; color: #94a3b8; border: 1px solid #334155;
-            padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; flex-shrink: 0;
+            padding: 8px 16px; border-radius: 24px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; flex-shrink: 0;
         }
         .chip:active { transform: scale(0.95); }
         .chip.selected { background-color: #2563eb; border-color: #60a5fa; color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4); }
@@ -45,7 +48,7 @@
         .input-row { display: flex; gap: 8px; }
         
         .input-box { 
-            flex: 1; background-color: #1e293b; border-radius: 12px; padding: 8px 10px; 
+            flex: 1; background-color: #1e293b; border-radius: 12px; padding: 10px; 
             border: 2px solid #334155; transition: all 0.1s; position: relative; min-width: 0;
         }
         .input-box.active { border-color: #3b82f6; background-color: #172554; }
@@ -54,46 +57,310 @@
         .input-box.editable-result { border-color: #475569; border-style: dashed; }
         .input-box.editable-result.active { border-color: #3b82f6; border-style: solid; }
 
-        .label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 1px; white-space: nowrap; }
+        .label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px; white-space: nowrap; }
         .active .label { color: #60a5fa; }
         
-        .val-display { font-size: 1.4rem; font-weight: 700; color: white; min-height: 28px; display: flex; align-items: center; overflow: hidden; }
-        .placeholder { color: #475569; font-weight: 400; font-size: 1rem; }
+        .val-display { font-size: 1.5rem; font-weight: 700; color: white; min-height: 32px; display: flex; align-items: center; overflow: hidden; }
+        .placeholder { color: #475569; font-weight: 400; font-size: 1.1rem; }
         
         /* 分裝總量 (唯讀) */
         .read-only-box {
             flex: 1; background: linear-gradient(135deg, #1e3a8a, #1e40af); 
-            border: 1px solid #3b82f6; border-radius: 12px; padding: 8px 10px;
+            border: 1px solid #3b82f6; border-radius: 12px; padding: 10px;
         }
-        .ro-label { font-size: 0.7rem; color: #bfdbfe; }
-        .ro-val { font-size: 1.3rem; font-weight: 700; color: white; }
+        .ro-label { font-size: 0.75rem; color: #bfdbfe; }
+        .ro-val { font-size: 1.4rem; font-weight: 700; color: white; }
         .ro-unit { font-size: 0.8rem; margin-left: 2px; opacity: 0.8; }
 
         /* --- 底部儀表板 --- */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 6px; border-top: 1px solid #334155; }
-        .card { background: #064e3b; border: 1px solid #059669; border-radius: 10px; padding: 6px; text-align: center; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #334155; }
+        .card { background: #064e3b; border: 1px solid #059669; border-radius: 10px; padding: 8px; text-align: center; }
         .card-gray { background: #1f2937; border-color: #374151; }
         
         .d-title { font-size: 0.7rem; color: #a7f3d0; opacity: 0.9; }
-        .d-val { font-size: 1.3rem; font-weight: 800; color: #fff; }
-        .d-sub { font-size: 0.65rem; color: #6ee7b7; }
+        .d-val { font-size: 1.4rem; font-weight: 800; color: #fff; }
+        .d-sub { font-size: 0.7rem; color: #6ee7b7; }
 
-        /* --- 鍵盤區 (關鍵：加入安全區域 padding) --- */
+        /* --- 鍵盤區 (關鍵修正：適配安全區域) --- */
         .keypad { 
-            height: 40vh; /* 稍微縮小鍵盤佔比，把空間留給上面 */
+            /* 使用 dvh 確保在不同瀏覽器高度一致 */
+            height: 42vh; 
+            height: 42dvh; 
             background-color: #0f172a; 
             border-top: 1px solid #334155; 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
-            padding-bottom: env(safe-area-inset-bottom); /* 避開 iPhone Home Bar */
+            /* 關鍵：加上底部安全距離，避免被 iPhone 橫條擋住 */
+            padding-bottom: env(safe-area-inset-bottom); 
             flex-shrink: 0; 
         }
-        .key { background: #1e293b; color: #f8fafc; font-size: 1.5rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
+        .key { background: #1e293b; color: #f8fafc; font-size: 1.6rem; font-weight: 600; border: 1px solid #0f172a; border-radius: 4px; margin: 1px; }
         .key:active { background: #475569; }
         .k-func { background: #334155; font-size: 1.1rem; color: #cbd5e1; }
         .k-del { color: #f87171; background: #334155; }
         .k-go { background: #2563eb; color: white; grid-row: span 2; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; line-height: 1.2; }
     </style>
+</head>
+<body onload="init()">
+
+    <div class="content-area">
+        <div class="chip-scroll">
+            <button class="chip" onclick="quickSetSpec('60')">60瓶</button>
+            <button class="chip" onclick="quickSetSpec('70')">70瓶</button>
+            <button class="chip" onclick="quickSetSpec('84')">84瓶</button>
+            <button class="chip" onclick="quickSetSpec('100')">100瓶</button>
+            <button class="chip" onclick="quickSetSpec('12')">12 (丸)</button>
+            <button class="chip" id="btn-k" onclick="quickSetSpec('30')">6 (K裝)</button>
+        </div>
+
+        <div class="input-row">
+            <div class="input-box" id="box-spec" onclick="focusField('spec')">
+                <div class="label">📦 0. 規格</div>
+                <div class="val-display" id="val-spec">60</div>
+            </div>
+            <div class="input-box" id="box-in" onclick="focusField('in')">
+                <div class="label">⚖️ 1. 移入(Kg)</div>
+                <div class="val-display placeholder" id="val-in">輸入</div>
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-box" id="box-avg" onclick="focusField('avg')">
+                <div class="label">📏 2. 平均(g)</div>
+                <div class="val-display placeholder" id="val-avg">輸入</div>
+            </div>
+            <div class="input-box active" id="box-bottles" onclick="focusField('bottles')">
+                <div class="label">💊 3. 成品(數)</div>
+                <div class="val-display placeholder" id="val-bottles">輸入</div>
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="read-only-box">
+                <div class="ro-label">總量 (Avg×數)</div>
+                <div><span class="ro-val" id="res-total">-</span><span class="ro-unit">Kg</span></div>
+            </div>
+            
+            <div class="input-box editable-result" id="box-remain" onclick="focusField('remain')">
+                <div class="label">📉 剩餘(可改)</div>
+                <div class="val-display placeholder" id="val-remain">-</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card card-gray">
+                <div class="d-title">入庫箱數</div>
+                <div class="d-val" id="res-box">-</div>
+                <div class="d-sub" id="res-box-det"></div>
+            </div>
+            <div class="card" id="card-yield">
+                <div class="d-title">產率 (%)</div>
+                <div class="d-val" id="res-yield">-</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="keypad">
+        <button class="key" onclick="press('7')">7</button>
+        <button class="key" onclick="press('8')">8</button>
+        <button class="key" onclick="press('9')">9</button>
+        <button class="key k-del" onclick="del()">⌫</button>
+
+        <button class="key" onclick="press('4')">4</button>
+        <button class="key" onclick="press('5')">5</button>
+        <button class="key" onclick="press('6')">6</button>
+        <button class="key k-func" onclick="clearField()">C</button>
+
+        <button class="key" onclick="press('1')">1</button>
+        <button class="key" onclick="press('2')">2</button>
+        <button class="key" onclick="press('3')">3</button>
+        <button class="key k-go" onclick="next()">下一個<br>▼</button>
+
+        <button class="key" onclick="press('0')">0</button>
+        <button class="key" onclick="press('.')">.</button>
+        <button class="key k-func" onclick="prev()">▲</button>
+    </div>
+
+    <script>
+        // --- 狀態管理 ---
+        let curr = 'bottles'; 
+        const order = ['in', 'avg', 'bottles', 'remain']; 
+        
+        const data = { spec: '60', in: '', avg: '', bottles: '', remain: '' };
+        
+        const els = {
+            spec: document.getElementById('val-spec'),
+            in: document.getElementById('val-in'),
+            avg: document.getElementById('val-avg'),
+            bottles: document.getElementById('val-bottles'),
+            remain: document.getElementById('val-remain'),
+            resTotal: document.getElementById('res-total'),
+            resBox: document.getElementById('res-box'),
+            resBoxDet: document.getElementById('res-box-det'),
+            resYield: document.getElementById('res-yield'),
+            cardYield: document.getElementById('card-yield')
+        };
+
+        function init() {
+            const saved = localStorage.getItem('v60_spec');
+            if(saved) quickSetSpec(saved);
+            focusField('bottles');
+        }
+
+        function focusField(id) {
+            curr = id;
+            ['spec', 'in', 'avg', 'bottles', 'remain'].forEach(k => {
+                document.getElementById('box-'+k).classList.remove('active');
+            });
+            document.getElementById('box-'+id).classList.add('active');
+        }
+
+        function quickSetSpec(val) {
+            data.spec = val;
+            els.spec.innerText = val; 
+            
+            document.querySelectorAll('.chip').forEach(btn => {
+                btn.classList.remove('selected');
+                
+                // 亮燈邏輯
+                if (val === '30' && btn.id === 'btn-k') {
+                    btn.classList.add('selected');
+                }
+                else if (val !== '30' && btn.id !== 'btn-k') {
+                    let btnNum = btn.innerText.match(/\d+/); 
+                    if (btnNum && btnNum[0] === val) {
+                        btn.classList.add('selected');
+                    }
+                }
+            });
+            calc();
+        }
+
+        function press(key) {
+            let val = data[curr] || '';
+            if(key === '.' && val.includes('.')) return;
+            if(val.length > 8) return;
+            data[curr] = val + key;
+            updateView(curr);
+            calc();
+        }
+
+        function del() {
+            let val = data[curr] || '';
+            data[curr] = val.slice(0, -1);
+            updateView(curr);
+            calc();
+        }
+
+        function clearField() {
+            data[curr] = '';
+            updateView(curr);
+            calc();
+        }
+
+        function next() {
+            let idx = order.indexOf(curr);
+            if (idx === -1) focusField('in');
+            else focusField(order[(idx + 1) % order.length]);
+        }
+        function prev() {
+            let idx = order.indexOf(curr);
+            if (idx === -1) focusField('bottles');
+            else focusField(order[(idx - 1 + order.length) % order.length]);
+        }
+
+        function updateView(id) {
+            const el = els[id];
+            const val = data[id];
+            
+            if (!val || val === '') {
+                if(id === 'spec') el.innerText = '輸入';
+                else el.innerText = (id==='remain') ? '-' : '輸入';
+                
+                if(id !== 'remain') el.classList.add('placeholder');
+            } else {
+                el.innerText = val;
+                el.classList.remove('placeholder');
+            }
+        }
+
+        // --- 核心計算 (產率公式修正) ---
+        function calc() {
+            localStorage.setItem('v60_spec', data.spec);
+
+            const spec = parseFloat(data.spec) || 0;
+            const i = parseFloat(data.in) || 0;
+            const a = parseFloat(data.avg) || 0;
+            const b = parseFloat(data.bottles) || 0;
+
+            // 1. 總量計算
+            let totalKg = 0;
+            if (a > 0 && b > 0) {
+                totalKg = (a * b) / 1000;
+                els.resTotal.innerText = totalKg.toFixed(2);
+            } else {
+                els.resTotal.innerText = "-";
+            }
+
+            // 2. 剩餘計算 (先處理剩餘量數值)
+            // 如果不是在手動編輯 remain 且資料可計算，就自動填入
+            if (curr !== 'remain') {
+                if (i > 0 && totalKg > 0) {
+                    const autoRemain = (i - totalKg).toFixed(2);
+                    data.remain = autoRemain;
+                    updateView('remain');
+                } else if (data.remain === '' && i === 0) {
+                    data.remain = '';
+                    updateView('remain');
+                }
+            }
+            
+            // 取得最終剩餘量數值 (不管是自動算的還是手動改的)
+            const finalRemain = parseFloat(data.remain) || 0;
+
+            // 3. 產率計算 (新公式：總量 / (移入 - 剩餘))
+            // 分母：實際消耗量 (移入 - 剩餘)
+            const actualConsumption = i - finalRemain;
+
+            if (actualConsumption > 0 && totalKg > 0) {
+                const y = (totalKg / actualConsumption) * 100;
+                els.resYield.innerText = y.toFixed(2) + "%";
+                
+                // 警示燈號
+                if(y < 98 || y > 102) {
+                    els.cardYield.style.background = "#7f1d1d";
+                    els.cardYield.style.borderColor = "#f87171";
+                } else {
+                    els.cardYield.style.background = "#064e3b";
+                    els.cardYield.style.borderColor = "#059669";
+                }
+            } else {
+                els.resYield.innerText = "-";
+                els.cardYield.style.background = "#064e3b";
+            }
+
+            // 4. 箱數計算
+            if (spec > 0 && b > 0) {
+                const full = Math.floor(b / spec);
+                const rem = b % spec;
+                const totalBox = rem > 0 ? full + 1 : full;
+                els.resBox.innerText = totalBox + " 箱";
+                els.resBoxDet.innerText = `(${full}整 + 餘${rem})`;
+            } else {
+                els.resBox.innerText = "-";
+                els.resBoxDet.innerText = "";
+            }
+        }
+
+        function resetAll() {
+            data.in = ''; data.avg = ''; data.bottles = ''; data.remain = '';
+            updateView('in'); updateView('avg'); updateView('bottles'); updateView('remain');
+            focusField('bottles');
+            calc();
+        }
+    </script>
+</body>
+</html>
 </head>
 <body onload="init()">
 
@@ -624,4 +891,5 @@
     </script>
 </body>
 </html>
+
 
